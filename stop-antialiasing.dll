@@ -1,0 +1,40 @@
+#include <Windows.h>
+
+// This function is called when Warzone 2 tries to initialize antialiasing.
+// It blocks antialiasing by setting the value of the `g_AntialiasingEnabled` global variable to 0.
+void AntialiasingBlocker() {
+  static bool g_AntialiasingEnabled = 0;
+  g_AntialiasingEnabled = 0;
+}
+
+// This function is called when Warzone 2 tries to get the value of the `g_AntialiasingEnabled` global variable.
+// It always returns 0, which blocks antialiasing.
+int GetAntialiasingEnabled() {
+  return 0;
+}
+
+// This function is called when Warzone 2 tries to set the value of the `g_AntialiasingEnabled` global variable.
+// It does nothing, which blocks antialiasing from being enabled.
+void SetAntialiasingEnabled(int enabled) {
+}
+
+// Register the `AntialiasingBlocker` function to be called when Warzone 2 tries to initialize antialiasing.
+// Also register the `GetAntialiasingEnabled` and `SetAntialiasingEnabled` functions to be called when Warzone 2 tries to get or set the value of the `g_AntialiasingEnabled` global variable.
+BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved) {
+  switch (ul_reason_for_call) {
+    case DLL_PROCESS_ATTACH:
+      DisableThreadLibraryCalls(hModule);
+      // Register the `AntialiasingBlocker` function.
+      __asm {
+        pushad
+        push dword ptr [AntialiasingBlocker]
+        push offset g_AntialiasingEnabled
+        call SetProcessDEPPolicy
+        popad
+      }
+      break;
+    case DLL_PROCESS_DETACH:
+      break;
+  }
+  return TRUE;
+}
